@@ -60,8 +60,9 @@ void MpvRenderer::initializeRenderContext()
     // Set up update callback
     mpv_render_context_set_update_callback(m_renderCtx, [](void *ctx) {
         MpvRenderer *self = static_cast<MpvRenderer *>(ctx);
-        if (self->m_mpvObject && self->m_mpvObject->window()) {
-            QMetaObject::invokeMethod(self->m_mpvObject->window(), "update", Qt::QueuedConnection);
+        if (self->m_mpvObject) {
+            // Trigger update on the MpvObject itself
+            QMetaObject::invokeMethod(self->m_mpvObject, "update", Qt::QueuedConnection);
         }
     }, this);
 
@@ -90,12 +91,27 @@ void MpvRenderer::synchronize(QQuickFramebufferObject *item)
 
 void MpvRenderer::render()
 {
-    if (!m_renderCtx || !m_mpvObject) {
+    if (!m_renderCtx) {
+        qDebug() << "render() called but no render context";
+        return;
+    }
+
+    if (!m_mpvObject) {
+        qDebug() << "render() called but no mpv object";
         return;
     }
 
     QOpenGLFramebufferObject *fbo = framebufferObject();
     if (!fbo) {
+        qDebug() << "render() called but no FBO";
+        return;
+    }
+
+    // Check if there's a new frame to render
+    uint64_t flags = mpv_render_context_update(m_renderCtx);
+
+    if (!(flags & MPV_RENDER_UPDATE_FRAME)) {
+        // No new frame, skip rendering
         return;
     }
 
@@ -112,7 +128,7 @@ void MpvRenderer::render()
         .internal_format = 0  // Let mpv decide
     };
 
-    int flip_y = 1;  // Qt FBOs are flipped
+    int flip_y = 0;  // Qt FBOs don't need flipping in Qt 6
 
     mpv_render_param params[] = {
         {MPV_RENDER_PARAM_OPENGL_FBO, &mpfbo},
@@ -122,13 +138,4 @@ void MpvRenderer::render()
 
     // Render the frame
     mpv_render_context_render(m_renderCtx, params);
-
-    // In Qt 6, we need to begin/end the external commands to reset state properly
-    // The old resetOpenGLState() was removed
-    if (m_mpvObject->window()) {
-        // Tell Qt to reset its cached OpenGL state
-        // This is done automatically by QQuickFramebufferObject in Qt 6
-        // but we can force a scene graph update
-        m_mpvObject->window()->update();
-    }
 }

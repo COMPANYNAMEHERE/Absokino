@@ -324,6 +324,7 @@ void MpvObject::handleMpvEvent(mpv_event *event)
     }
 
     case MPV_EVENT_FILE_LOADED:
+        qDebug() << "MPV_EVENT_FILE_LOADED";
         m_playing = true;
         emit playingChanged();
         emit fileLoaded();
@@ -575,11 +576,18 @@ QString MpvObject::getMpvVersion() const
 // Playback control implementations
 void MpvObject::loadFile(const QString &path)
 {
-    if (!m_mpv) return;
+    if (!m_mpv) {
+        qWarning() << "loadFile: mpv not initialized";
+        return;
+    }
 
+    qDebug() << "Loading file:" << path;
     QByteArray pathUtf8 = path.toUtf8();
     const char *args[] = {"loadfile", pathUtf8.constData(), nullptr};
-    mpv_command_async(m_mpv, 0, args);
+    int result = mpv_command_async(m_mpv, 0, args);
+    if (result < 0) {
+        qWarning() << "Failed to load file:" << mpv_error_string(result);
+    }
 }
 
 void MpvObject::play()

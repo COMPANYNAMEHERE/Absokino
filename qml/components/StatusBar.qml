@@ -17,6 +17,11 @@ ToolBar {
     signal settingsClicked()
     signal diagnosticsClicked()
 
+    // Set the mpv object for diagnostics
+    Component.onCompleted: {
+        HdrDiagnostics.mpvObject = mpvObject
+    }
+
     // Helper component for status indicators
     component StatusIndicator: RowLayout {
         property string label

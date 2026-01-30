@@ -362,16 +362,12 @@ Kirigami.ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
 
-                    Rectangle {
-                        anchors.fill: parent
-                        color: Kirigami.Theme.backgroundColor
-                    }
-
                     // "No video" placeholder
                     Item {
                         anchors.centerIn: parent
                         visible: !mpv.playing && mpv.duration <= 0
                         opacity: 0.5
+                        z: 10
 
                         Column {
                             anchors.centerIn: parent
@@ -393,9 +389,11 @@ Kirigami.ApplicationWindow {
                         }
                     }
 
+                    // Mouse handling for windowed mode (behind the video)
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.LeftButton | Qt.RightButton
+                        z: 5
 
                         onClicked: (mouse) => {
                             if (mouse.button === Qt.RightButton) {
@@ -424,19 +422,35 @@ Kirigami.ApplicationWindow {
         }
     }
 
-    // Fullscreen video (no UI, no click handling except double-click to exit)
+    // The MpvObject instance - always stays in the same place
     Item {
-        id: fullscreenContainer
+        id: videoRenderContainer
         anchors.fill: parent
-        visible: PlayerController.isFullscreen
+        z: PlayerController.isFullscreen ? 100 : 0  // Bring to front in fullscreen
 
         Rectangle {
             anchors.fill: parent
-            color: "black"
+            color: PlayerController.isFullscreen ? "black" : Kirigami.Theme.backgroundColor
+            visible: PlayerController.isFullscreen
         }
 
+        MpvObject {
+            id: mpv
+            anchors.fill: parent
+            visible: true
+
+            Component.onCompleted: {
+                console.log("MpvObject created, size:", width, "x", height)
+            }
+
+            onWidthChanged: console.log("MpvObject width changed:", width)
+            onHeightChanged: console.log("MpvObject height changed:", height)
+        }
+
+        // Fullscreen mouse handling overlay
         MouseArea {
             anchors.fill: parent
+            visible: PlayerController.isFullscreen
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             hoverEnabled: false
 
@@ -458,16 +472,6 @@ Kirigami.ApplicationWindow {
                 // Right clicks also do nothing in fullscreen
             }
         }
-    }
-
-    // The MpvObject instance - parented to the appropriate container
-    MpvObject {
-        id: mpv
-
-        // Dynamically reparent based on fullscreen state
-        parent: PlayerController.isFullscreen ? fullscreenContainer : videoContainer
-        anchors.fill: parent
-        visible: true
     }
 
     // Popups
