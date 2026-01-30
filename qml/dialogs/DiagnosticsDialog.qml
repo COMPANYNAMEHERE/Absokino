@@ -13,10 +13,16 @@ Dialog {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     title: "HDR/Output Diagnostics"
     modal: true
     standardButtons: Dialog.Close
+    closePolicy: Popup.CloseOnEscape
 
     width: 600
     height: 500
@@ -95,7 +101,7 @@ Dialog {
                 background: Rectangle {
                     color: Kirigami.Theme.backgroundColor
                     border.width: 1
-                    border.color: Kirigami.Theme.separatorColor
+                    border.color: root.separatorColor
                     radius: Kirigami.Units.smallSpacing
                 }
             }

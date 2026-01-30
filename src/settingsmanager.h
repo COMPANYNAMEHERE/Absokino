@@ -29,6 +29,7 @@ class SettingsManager : public QObject
 
     // Volume
     Q_PROPERTY(int volume READ volume WRITE setVolume NOTIFY volumeChanged)
+    Q_PROPERTY(bool allowVolumeBoost READ allowVolumeBoost WRITE setAllowVolumeBoost NOTIFY allowVolumeBoostChanged)
 
     // Window geometry
     Q_PROPERTY(QSize windowSize READ windowSize WRITE setWindowSize NOTIFY windowSizeChanged)
@@ -53,9 +54,11 @@ public:
     QString fullscreenBehavior() const;
     void setFullscreenBehavior(const QString &behavior);
 
-    // Volume (0-150)
+    // Volume (0-100 or 0-150 with boost)
     int volume() const;
     void setVolume(int vol);
+    bool allowVolumeBoost() const;
+    void setAllowVolumeBoost(bool allow);
 
     // Window geometry
     QSize windowSize() const;
@@ -73,6 +76,7 @@ signals:
     void rendererModeChanged();
     void fullscreenBehaviorChanged();
     void volumeChanged();
+    void allowVolumeBoostChanged();
     void windowSizeChanged();
     void windowMaximizedChanged();
 

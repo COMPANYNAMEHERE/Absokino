@@ -13,6 +13,11 @@ Item {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     height: 24
 
@@ -26,7 +31,7 @@ Item {
         radius: 2
         color: Kirigami.Theme.backgroundColor
         border.width: 1
-        border.color: Kirigami.Theme.separatorColor
+        border.color: root.separatorColor
 
         // Progress fill
         Rectangle {

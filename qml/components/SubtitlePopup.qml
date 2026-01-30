@@ -12,91 +12,114 @@ Dialog {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     signal loadExternalClicked()
 
     title: "Subtitles"
     modal: true
     standardButtons: Dialog.Close
+    closePolicy: Popup.CloseOnEscape
 
     width: 400
-    height: Math.min(400, contentColumn.implicitHeight + 100)
+    height: Math.min(600, contentColumn.implicitHeight + 100)
 
     ColumnLayout {
         id: contentColumn
         anchors.fill: parent
         spacing: Kirigami.Units.smallSpacing
 
-        // "Off" option
-        RadioButton {
-            text: "Off"
-            checked: mpvObject.currentSubtitleTrack === 0
-            onClicked: mpvObject.setSubtitleTrack(0)
-        }
-
-        // Separator
-        Rectangle {
+        // Scrollable area for subtitle tracks
+        ScrollView {
             Layout.fillWidth: true
-            height: 1
-            color: Kirigami.Theme.separatorColor
-            visible: mpvObject.subtitleTracks.length > 0
-        }
+            Layout.fillHeight: true
+            Layout.preferredHeight: Math.min(400, trackList.implicitHeight + 20)
 
-        // Subtitle tracks
-        Repeater {
-            model: mpvObject.subtitleTracks
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-            RadioButton {
-                required property var modelData
-                required property int index
+            ColumnLayout {
+                id: trackList
+                width: parent.width
+                spacing: Kirigami.Units.smallSpacing
 
-                text: {
-                    let track = modelData
-                    let label = ""
-
-                    if (track.lang && track.title) {
-                        label = track.lang.toUpperCase() + " - " + track.title
-                    } else if (track.lang) {
-                        label = track.lang.toUpperCase()
-                    } else if (track.title) {
-                        label = track.title
-                    } else {
-                        label = "Track " + track.id
-                    }
-
-                    if (track.codec) {
-                        label += " [" + track.codec + "]"
-                    }
-
-                    if (track.external) {
-                        label += " (External)"
-                    }
-
-                    return label
+                // "Off" option
+                RadioButton {
+                    text: "Off"
+                    checked: mpvObject.currentSubtitleTrack === 0
+                    onClicked: mpvObject.setSubtitleTrack(0)
+                    Layout.fillWidth: true
                 }
 
-                checked: mpvObject.currentSubtitleTrack === modelData.id
-                onClicked: mpvObject.setSubtitleTrack(modelData.id)
+                // Separator
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 1
+                    color: root.separatorColor
+                    visible: mpvObject.subtitleTracks.length > 0
+                }
 
-                Layout.fillWidth: true
+                // Subtitle tracks
+                Repeater {
+                    model: mpvObject.subtitleTracks
+
+                    RadioButton {
+                        required property var modelData
+                        required property int index
+
+                        text: {
+                            let track = modelData
+                            let label = ""
+
+                            if (track.lang && track.title) {
+                                label = track.lang.toUpperCase() + " - " + track.title
+                            } else if (track.lang) {
+                                label = track.lang.toUpperCase()
+                            } else if (track.title) {
+                                label = track.title
+                            } else {
+                                label = "Track " + track.id
+                            }
+
+                            if (track.codec) {
+                                label += " [" + track.codec + "]"
+                            }
+
+                            if (track.external) {
+                                label += " (External)"
+                            }
+
+                            return label
+                        }
+
+                        checked: mpvObject.currentSubtitleTrack === modelData.id
+                        onClicked: mpvObject.setSubtitleTrack(modelData.id)
+
+                        Layout.fillWidth: true
+                    }
+                }
+
+                // Empty state
+                Label {
+                    text: "No subtitle tracks available"
+                    opacity: 0.5
+                    visible: mpvObject.subtitleTracks.length === 0
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.topMargin: Kirigami.Units.largeSpacing
+                    Layout.bottomMargin: Kirigami.Units.largeSpacing
+                }
             }
         }
-
-        // Empty state
-        Label {
-            text: "No subtitle tracks available"
-            opacity: 0.5
-            visible: mpvObject.subtitleTracks.length === 0
-            Layout.alignment: Qt.AlignHCenter
-        }
-
-        Item { Layout.fillHeight: true }
 
         // Separator before action
         Rectangle {
             Layout.fillWidth: true
             height: 1
-            color: Kirigami.Theme.separatorColor
+            color: root.separatorColor
         }
 
         // Load external button

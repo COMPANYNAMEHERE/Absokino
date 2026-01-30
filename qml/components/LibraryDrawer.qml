@@ -14,6 +14,11 @@ Rectangle {
 
     width: 280
     color: Kirigami.Theme.backgroundColor
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     signal fileSelected(string path)
 
@@ -22,7 +27,7 @@ Rectangle {
         anchors.right: parent.right
         width: 1
         height: parent.height
-        color: Kirigami.Theme.separatorColor
+        color: root.separatorColor
     }
 
     ColumnLayout {

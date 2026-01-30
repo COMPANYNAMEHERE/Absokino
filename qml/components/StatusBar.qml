@@ -13,6 +13,11 @@ ToolBar {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     signal settingsClicked()
     signal diagnosticsClicked()
@@ -63,7 +68,7 @@ ToolBar {
             anchors.bottom: parent.top
             width: parent.width
             height: 1
-            color: Kirigami.Theme.separatorColor
+            color: root.separatorColor
         }
     }
 
@@ -72,6 +77,15 @@ ToolBar {
         anchors.leftMargin: Kirigami.Units.smallSpacing
         anchors.rightMargin: Kirigami.Units.smallSpacing
         spacing: Kirigami.Units.largeSpacing
+
+        // No video placeholder - inside the layout so it's not clipped
+        Label {
+            text: "No video loaded"
+            opacity: 0.5
+            visible: mpvObject.videoWidth <= 0
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+        }
 
         // HDR/Quality indicators
         RowLayout {
@@ -113,15 +127,16 @@ ToolBar {
                 highlightColor: Kirigami.Theme.positiveTextColor
 
                 ToolTip.text: "Click Diagnostics for details. 'Unknown' is normal on Linux."
-                ToolTip.visible: displayHdrMouseArea.containsMouse
+                ToolTip.visible: displayHdrHover.hovered
                 ToolTip.delay: 500
 
-                MouseArea {
-                    id: displayHdrMouseArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: root.diagnosticsClicked()
+                HoverHandler {
+                    id: displayHdrHover
                     cursorShape: Qt.PointingHandCursor
+                }
+
+                TapHandler {
+                    onTapped: root.diagnosticsClicked()
                 }
             }
         }
@@ -133,7 +148,7 @@ ToolBar {
             Layout.fillHeight: true
             Layout.topMargin: 4
             Layout.bottomMargin: 4
-            color: Kirigami.Theme.separatorColor
+            color: root.separatorColor
         }
 
         // Video info
@@ -252,11 +267,4 @@ ToolBar {
         }
     }
 
-    // No video placeholder
-    Label {
-        anchors.centerIn: parent
-        text: "No video loaded"
-        opacity: 0.5
-        visible: mpvObject.videoWidth <= 0
-    }
 }

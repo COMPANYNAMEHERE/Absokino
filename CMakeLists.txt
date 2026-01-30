@@ -15,6 +15,11 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS
     DBus
 )
 
+# Qt 6.8+ expects explicit policy for extra qmldir generation
+if(DEFINED QT_KNOWN_POLICY_QTP0004)
+    qt_policy(SET QTP0004 NEW)
+endif()
+
 # Find Kirigami
 find_package(KF6Kirigami REQUIRED)
 find_package(KF6Config REQUIRED)
@@ -74,6 +79,7 @@ qt_add_qml_module(absokino
     VERSION 1.0
     QML_FILES ${QML_FILES}
     RESOURCE_PREFIX /
+    NO_IMPORT_SCAN
 )
 
 target_include_directories(absokino PRIVATE

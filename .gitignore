@@ -26,6 +26,27 @@ qrc_*.cpp
 # Generated files
 compile_commands.json
 
+# Local media / test assets
+fallout.mkv
+test-media/
+samples/
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.webm
+*.m4v
+*.wmv
+*.flv
+*.ts
+*.m2ts
+*.mp3
+*.flac
+*.wav
+*.ogg
+*.srt
+*.ass
+
 # System files
 .DS_Store
 Thumbs.db

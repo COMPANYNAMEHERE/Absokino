@@ -32,6 +32,7 @@ private:
     mpv_render_context *m_renderCtx = nullptr;
     QSize m_size;
     bool m_initialized = false;
+    bool m_forceRender = true;
 };
 
 #endif // MPVRENDERER_H

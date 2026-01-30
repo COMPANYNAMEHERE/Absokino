@@ -22,11 +22,22 @@ Kirigami.ApplicationWindow {
     visible: true
 
     // Track window state changes
-    onWidthChanged: if (!PlayerController.isFullscreen) Settings.setWindowSize(Qt.size(width, height))
-    onHeightChanged: if (!PlayerController.isFullscreen) Settings.setWindowSize(Qt.size(width, height))
+    onWidthChanged: if (!PlayerController.isFullscreen) Settings.windowSize = Qt.size(width, height)
+    onHeightChanged: if (!PlayerController.isFullscreen) Settings.windowSize = Qt.size(width, height)
 
     // Fullscreen handling
     visibility: PlayerController.isFullscreen ? Window.FullScreen : Window.Windowed
+
+    readonly property int maxVolume: Settings.allowVolumeBoost ? 150 : 100
+
+    Connections {
+        target: Settings
+        function onAllowVolumeBoostChanged() {
+            if (!Settings.allowVolumeBoost && mpv.volume > 100) {
+                mpv.volume = 100
+            }
+        }
+    }
 
     // Global keyboard shortcuts
     Shortcut {
@@ -56,7 +67,7 @@ Kirigami.ApplicationWindow {
 
     Shortcut {
         sequence: "Up"
-        onActivated: mpv.volume = Math.min(150, mpv.volume + 5)
+        onActivated: mpv.volume = Math.min(root.maxVolume, mpv.volume + 5)
     }
 
     Shortcut {
@@ -164,48 +175,13 @@ Kirigami.ApplicationWindow {
     Menu {
         id: contextMenu
 
-        Menu {
-            title: "Subtitles"
-
-            MenuItem {
-                text: "Off"
-                checkable: true
-                checked: mpv.currentSubtitleTrack === 0
-                onTriggered: mpv.setSubtitleTrack(0)
-            }
-
-            MenuSeparator {}
-
-            Instantiator {
-                model: mpv.subtitleTracks
-                MenuItem {
-                    text: {
-                        let track = mpv.subtitleTracks[index]
-                        let label = track.title || track.lang || ("Track " + track.id)
-                        if (track.lang && track.title) {
-                            label = track.lang.toUpperCase() + " - " + track.title
-                        } else if (track.lang) {
-                            label = track.lang.toUpperCase()
-                        }
-                        return label
-                    }
-                    checkable: true
-                    checked: mpv.currentSubtitleTrack === mpv.subtitleTracks[index].id
-                    onTriggered: mpv.setSubtitleTrack(mpv.subtitleTracks[index].id)
-                }
-                onObjectAdded: (index, object) => contextMenu.children[0].insertItem(index + 2, object)
-                onObjectRemoved: (index, object) => contextMenu.children[0].removeItem(object)
-            }
-
-            MenuSeparator {}
-
-            MenuItem {
-                text: "Load External..."
-                onTriggered: subtitleDialog.open()
-            }
+        MenuItem {
+            text: "Subtitles..."
+            onTriggered: subtitlePopup.open()
         }
 
         Menu {
+            id: audioMenu
             title: "Audio"
 
             Instantiator {
@@ -228,12 +204,13 @@ Kirigami.ApplicationWindow {
                     checked: mpv.currentAudioTrack === mpv.audioTracks[index].id
                     onTriggered: mpv.setAudioTrack(mpv.audioTracks[index].id)
                 }
-                onObjectAdded: (index, object) => contextMenu.children[1].insertItem(index, object)
-                onObjectRemoved: (index, object) => contextMenu.children[1].removeItem(object)
+                onObjectAdded: (index, object) => audioMenu.insertItem(index, object)
+                onObjectRemoved: (index, object) => audioMenu.removeItem(object)
             }
         }
 
         Menu {
+            id: chaptersMenu
             title: "Chapters"
             enabled: mpv.chapters.length > 0
 
@@ -250,8 +227,8 @@ Kirigami.ApplicationWindow {
                     checked: mpv.currentChapter === index
                     onTriggered: mpv.setChapter(index)
                 }
-                onObjectAdded: (index, object) => contextMenu.children[2].insertItem(index, object)
-                onObjectRemoved: (index, object) => contextMenu.children[2].removeItem(object)
+                onObjectAdded: (index, object) => chaptersMenu.insertItem(index, object)
+                onObjectRemoved: (index, object) => chaptersMenu.removeItem(object)
             }
         }
 
@@ -322,135 +299,119 @@ Kirigami.ApplicationWindow {
     }
 
     // Main content - windowed mode
-    Item {
+    ColumnLayout {
         anchors.fill: parent
+        spacing: 0
         visible: !PlayerController.isFullscreen
 
-        ColumnLayout {
-            anchors.fill: parent
+        // Status bar (top)
+        StatusBar {
+            id: statusBar
+            Layout.fillWidth: true
+            mpvObject: mpv
+            onSettingsClicked: settingsDialog.open()
+            onDiagnosticsClicked: diagnosticsDialog.open()
+        }
+
+        // Main content area with Library drawer
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             spacing: 0
 
-            // Status bar (top)
-            StatusBar {
-                id: statusBar
-                Layout.fillWidth: true
-                mpvObject: mpv
-                onSettingsClicked: settingsDialog.open()
-                onDiagnosticsClicked: diagnosticsDialog.open()
+            // Library drawer
+            LibraryDrawer {
+                id: libraryDrawer
+                Layout.fillHeight: true
+                visible: PlayerController.libraryVisible
+                onFileSelected: (path) => {
+                    mpv.loadFile(path)
+                    RecentFiles.addFile(path)
+                }
             }
 
-            // Main content area with Library drawer
-            RowLayout {
+            // Video container for windowed mode
+            Item {
+                id: videoContainer
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                spacing: 0
 
-                // Library drawer
-                LibraryDrawer {
-                    id: libraryDrawer
-                    Layout.fillHeight: true
-                    visible: PlayerController.libraryVisible
-                    onFileSelected: (path) => {
-                        mpv.loadFile(path)
-                        RecentFiles.addFile(path)
-                    }
+                Rectangle {
+                    anchors.fill: parent
+                    color: Kirigami.Theme.backgroundColor
                 }
 
-                // Video container for windowed mode
+                // "No video" placeholder
                 Item {
-                    id: videoContainer
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    anchors.centerIn: parent
+                    visible: !mpv.playing && mpv.duration <= 0
+                    opacity: 0.5
+                    z: 10
 
-                    // "No video" placeholder
-                    Item {
+                    Column {
                         anchors.centerIn: parent
-                        visible: !mpv.playing && mpv.duration <= 0
-                        opacity: 0.5
-                        z: 10
+                        spacing: Kirigami.Units.largeSpacing
 
-                        Column {
-                            anchors.centerIn: parent
-                            spacing: Kirigami.Units.largeSpacing
-
-                            Kirigami.Icon {
-                                source: "video-symbolic"
-                                width: Kirigami.Units.iconSizes.enormous
-                                height: width
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                opacity: 0.3
-                            }
-
-                            Label {
-                                text: "Drop a video file here or click Open"
-                                color: Kirigami.Theme.disabledTextColor
-                                anchors.horizontalCenter: parent.horizontalCenter
-                            }
-                        }
-                    }
-
-                    // Mouse handling for windowed mode (behind the video)
-                    MouseArea {
-                        anchors.fill: parent
-                        acceptedButtons: Qt.LeftButton | Qt.RightButton
-                        z: 5
-
-                        onClicked: (mouse) => {
-                            if (mouse.button === Qt.RightButton) {
-                                contextMenu.popup()
-                            }
+                        Kirigami.Icon {
+                            source: "video-symbolic"
+                            width: Kirigami.Units.iconSizes.enormous
+                            height: width
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            opacity: 0.3
                         }
 
-                        onDoubleClicked: {
-                            PlayerController.isFullscreen = true
+                        Label {
+                            text: "Drop a video file here or click Open"
+                            color: Kirigami.Theme.disabledTextColor
+                            anchors.horizontalCenter: parent.horizontalCenter
                         }
                     }
                 }
-            }
 
-            // Control bar (bottom)
-            ControlBar {
-                id: controlBar
-                Layout.fillWidth: true
-                mpvObject: mpv
+                // Mouse handling for windowed mode
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    z: 5
+                    enabled: !PlayerController.isFullscreen
 
-                onOpenFileClicked: fileDialog.open()
-                onLibraryToggled: PlayerController.libraryVisible = !PlayerController.libraryVisible
-                onSubtitlesClicked: subtitlePopup.open()
-                onAudioClicked: audioPopup.open()
+                    onClicked: (mouse) => {
+                        if (mouse.button === Qt.RightButton) {
+                            contextMenu.popup()
+                        }
+                    }
+
+                    onDoubleClicked: {
+                        PlayerController.isFullscreen = true
+                    }
+                }
             }
+        }
+
+        // Control bar (bottom)
+        ControlBar {
+            id: controlBar
+            Layout.fillWidth: true
+            mpvObject: mpv
+
+            onOpenFileClicked: fileDialog.open()
+            onLibraryToggled: PlayerController.libraryVisible = !PlayerController.libraryVisible
+            onSubtitlesClicked: subtitlePopup.open()
+            onAudioClicked: audioPopup.open()
         }
     }
 
-    // The MpvObject instance - always stays in the same place
-    Item {
-        id: videoRenderContainer
+    // Fullscreen overlay - covers entire window
+    Rectangle {
+        id: fullscreenOverlay
         anchors.fill: parent
-        z: PlayerController.isFullscreen ? 100 : 0  // Bring to front in fullscreen
+        color: "black"
+        visible: PlayerController.isFullscreen
+        z: 99
 
-        Rectangle {
-            anchors.fill: parent
-            color: PlayerController.isFullscreen ? "black" : Kirigami.Theme.backgroundColor
-            visible: PlayerController.isFullscreen
-        }
-
-        MpvObject {
-            id: mpv
-            anchors.fill: parent
-            visible: true
-
-            Component.onCompleted: {
-                console.log("MpvObject created, size:", width, "x", height)
-            }
-
-            onWidthChanged: console.log("MpvObject width changed:", width)
-            onHeightChanged: console.log("MpvObject height changed:", height)
-        }
-
-        // Fullscreen mouse handling overlay
+        // Fullscreen mouse handling
         MouseArea {
             anchors.fill: parent
-            visible: PlayerController.isFullscreen
             acceptedButtons: Qt.LeftButton | Qt.RightButton
             hoverEnabled: false
 
@@ -458,8 +419,6 @@ Kirigami.ApplicationWindow {
             property real doubleClickThreshold: 300  // ms
 
             onClicked: (mouse) => {
-                // In fullscreen: single clicks do NOTHING (as specified)
-                // But we need to detect double-click manually
                 if (mouse.button === Qt.LeftButton) {
                     let currentTime = Date.now()
                     if (currentTime - lastClickTime < doubleClickThreshold) {
@@ -469,8 +428,24 @@ Kirigami.ApplicationWindow {
                         lastClickTime = currentTime
                     }
                 }
-                // Right clicks also do nothing in fullscreen
             }
+        }
+    }
+
+    // The MpvObject - positioned explicitly to avoid reparenting issues
+    MpvObject {
+        id: mpv
+        visible: true
+        z: PlayerController.isFullscreen ? 100 : 1
+
+        // Use explicit positioning instead of reparenting
+        x: PlayerController.isFullscreen ? 0 : videoContainer.x + (libraryDrawer.visible ? libraryDrawer.width : 0)
+        y: PlayerController.isFullscreen ? 0 : statusBar.height
+        width: PlayerController.isFullscreen ? root.width : videoContainer.width
+        height: PlayerController.isFullscreen ? root.height : videoContainer.height
+
+        Component.onCompleted: {
+            console.log("MpvObject created")
         }
     }
 
@@ -496,7 +471,7 @@ Kirigami.ApplicationWindow {
         visible: false
         type: Kirigami.MessageType.Error
         showCloseButton: true
-        z: 100
+        z: 200
 
         Connections {
             target: mpv

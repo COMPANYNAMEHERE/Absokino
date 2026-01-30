@@ -14,193 +14,313 @@ Dialog {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     title: "Settings"
     modal: true
     standardButtons: Dialog.Close
+    closePolicy: Popup.CloseOnEscape
 
     width: 500
     height: 500
+
+    background: Rectangle {
+        color: Kirigami.Theme.backgroundColor
+        radius: Kirigami.Units.smallSpacing
+        border.width: 1
+        border.color: root.separatorColor
+    }
 
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.largeSpacing
 
-        // HDR Settings
-        GroupBox {
-            title: "HDR Output Mode"
+        TabBar {
+            id: tabs
             Layout.fillWidth: true
 
-            ColumnLayout {
-                anchors.fill: parent
-
-                Label {
-                    text: "Controls how HDR content is processed for output."
-                    wrapMode: Text.WordWrap
-                    opacity: 0.7
-                    Layout.fillWidth: true
-                }
-
-                RadioButton {
-                    text: "Auto (Passthrough preferred)"
-                    checked: Settings.hdrMode === "auto"
-                    onClicked: {
-                        Settings.hdrMode = "auto"
-                        mpvObject.setHdrMode("auto")
-                    }
-
-                    ToolTip.text: "Prefer HDR passthrough when possible, with automatic fallback"
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-
-                RadioButton {
-                    text: "Passthrough (HDR output)"
-                    checked: Settings.hdrMode === "passthrough"
-                    onClicked: {
-                        Settings.hdrMode = "passthrough"
-                        mpvObject.setHdrMode("passthrough")
-                    }
-
-                    ToolTip.text: "Send HDR content directly to display without tone-mapping"
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-
-                RadioButton {
-                    text: "Tone-map to SDR"
-                    checked: Settings.hdrMode === "tonemap"
-                    onClicked: {
-                        Settings.hdrMode = "tonemap"
-                        mpvObject.setHdrMode("tonemap")
-                    }
-
-                    ToolTip.text: "Convert HDR content to SDR using tone-mapping"
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-            }
+            TabButton { text: "Playback" }
+            TabButton { text: "Audio" }
+            TabButton { text: "UI" }
+            TabButton { text: "Diagnostics" }
         }
 
-        // Hardware Decoding
-        GroupBox {
-            title: "Hardware Decoding"
+        StackLayout {
             Layout.fillWidth: true
+            Layout.fillHeight: true
+            currentIndex: tabs.currentIndex
 
-            ColumnLayout {
-                anchors.fill: parent
+            // Playback tab
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-                Label {
-                    text: "Use GPU for video decoding when available."
-                    wrapMode: Text.WordWrap
-                    opacity: 0.7
-                    Layout.fillWidth: true
-                }
+                ScrollView {
+                    anchors.fill: parent
+                    clip: true
 
-                RadioButton {
-                    text: "Auto (Recommended)"
-                    checked: Settings.hwdecMode === "auto"
-                    onClicked: {
-                        Settings.hwdecMode = "auto"
-                        mpvObject.setHwdecMode("auto")
-                    }
-                }
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: Kirigami.Units.largeSpacing
 
-                RadioButton {
-                    text: "Always On"
-                    checked: Settings.hwdecMode === "on"
-                    onClicked: {
-                        Settings.hwdecMode = "on"
-                        mpvObject.setHwdecMode("on")
-                    }
-                }
+                        // HDR Settings
+                        GroupBox {
+                            title: "HDR Output Mode"
+                            Layout.fillWidth: true
 
-                RadioButton {
-                    text: "Off (Software only)"
-                    checked: Settings.hwdecMode === "off"
-                    onClicked: {
-                        Settings.hwdecMode = "off"
-                        mpvObject.setHwdecMode("off")
+                            ColumnLayout {
+                                anchors.fill: parent
+
+                                Label {
+                                    text: "Controls how HDR content is processed for output."
+                                    wrapMode: Text.WordWrap
+                                    opacity: 0.7
+                                    Layout.fillWidth: true
+                                }
+
+                                RadioButton {
+                                    text: "Auto (Passthrough preferred)"
+                                    checked: Settings.hdrMode === "auto"
+                                    onClicked: {
+                                        Settings.hdrMode = "auto"
+                                        mpvObject.setHdrMode("auto")
+                                    }
+
+                                    ToolTip.text: "Prefer HDR passthrough when possible, with automatic fallback"
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                }
+
+                                RadioButton {
+                                    text: "Passthrough (HDR output)"
+                                    checked: Settings.hdrMode === "passthrough"
+                                    onClicked: {
+                                        Settings.hdrMode = "passthrough"
+                                        mpvObject.setHdrMode("passthrough")
+                                    }
+
+                                    ToolTip.text: "Send HDR content directly to display without tone-mapping"
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                }
+
+                                RadioButton {
+                                    text: "Tone-map to SDR"
+                                    checked: Settings.hdrMode === "tonemap"
+                                    onClicked: {
+                                        Settings.hdrMode = "tonemap"
+                                        mpvObject.setHdrMode("tonemap")
+                                    }
+
+                                    ToolTip.text: "Convert HDR content to SDR using tone-mapping"
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                }
+                            }
+                        }
+
+                        // Hardware Decoding
+                        GroupBox {
+                            title: "Hardware Decoding"
+                            Layout.fillWidth: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+
+                                Label {
+                                    text: "Use GPU for video decoding when available."
+                                    wrapMode: Text.WordWrap
+                                    opacity: 0.7
+                                    Layout.fillWidth: true
+                                }
+
+                                RadioButton {
+                                    text: "Auto (Recommended)"
+                                    checked: Settings.hwdecMode === "auto"
+                                    onClicked: {
+                                        Settings.hwdecMode = "auto"
+                                        mpvObject.setHwdecMode("auto")
+                                    }
+                                }
+
+                                RadioButton {
+                                    text: "Always On"
+                                    checked: Settings.hwdecMode === "on"
+                                    onClicked: {
+                                        Settings.hwdecMode = "on"
+                                        mpvObject.setHwdecMode("on")
+                                    }
+                                }
+
+                                RadioButton {
+                                    text: "Off (Software only)"
+                                    checked: Settings.hwdecMode === "off"
+                                    onClicked: {
+                                        Settings.hwdecMode = "off"
+                                        mpvObject.setHwdecMode("off")
+                                    }
+                                }
+                            }
+                        }
+
+                        // Renderer
+                        GroupBox {
+                            title: "Renderer"
+                            Layout.fillWidth: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+
+                                Label {
+                                    text: "Graphics API for video rendering. Changes require restart."
+                                    wrapMode: Text.WordWrap
+                                    opacity: 0.7
+                                    Layout.fillWidth: true
+                                }
+
+                                RadioButton {
+                                    text: "Auto"
+                                    checked: Settings.rendererMode === "auto"
+                                    onClicked: Settings.rendererMode = "auto"
+                                }
+
+                                RadioButton {
+                                    text: "Vulkan (Better HDR support)"
+                                    checked: Settings.rendererMode === "vulkan"
+                                    onClicked: Settings.rendererMode = "vulkan"
+                                }
+
+                                RadioButton {
+                                    text: "OpenGL"
+                                    checked: Settings.rendererMode === "opengl"
+                                    onClicked: Settings.rendererMode = "opengl"
+                                }
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        // Renderer
-        GroupBox {
-            title: "Renderer"
-            Layout.fillWidth: true
+            // Audio tab
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-            ColumnLayout {
-                anchors.fill: parent
+                ScrollView {
+                    anchors.fill: parent
+                    clip: true
 
-                Label {
-                    text: "Graphics API for video rendering. Changes require restart."
-                    wrapMode: Text.WordWrap
-                    opacity: 0.7
-                    Layout.fillWidth: true
-                }
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: Kirigami.Units.largeSpacing
 
-                RadioButton {
-                    text: "Auto"
-                    checked: Settings.rendererMode === "auto"
-                    onClicked: Settings.rendererMode = "auto"
-                }
+                        GroupBox {
+                            title: "Audio"
+                            Layout.fillWidth: true
 
-                RadioButton {
-                    text: "Vulkan (Better HDR support)"
-                    checked: Settings.rendererMode === "vulkan"
-                    onClicked: Settings.rendererMode = "vulkan"
-                }
+                            ColumnLayout {
+                                anchors.fill: parent
 
-                RadioButton {
-                    text: "OpenGL"
-                    checked: Settings.rendererMode === "opengl"
-                    onClicked: Settings.rendererMode = "opengl"
-                }
-            }
-        }
+                                Label {
+                                    text: "Control volume behavior."
+                                    wrapMode: Text.WordWrap
+                                    opacity: 0.7
+                                    Layout.fillWidth: true
+                                }
 
-        // Fullscreen Behavior
-        GroupBox {
-            title: "Fullscreen Behavior"
-            Layout.fillWidth: true
+                                CheckBox {
+                                    text: "Allow volume above 100% (boost)"
+                                    checked: Settings.allowVolumeBoost
+                                    onToggled: {
+                                        Settings.allowVolumeBoost = checked
+                                        if (!checked && mpvObject.volume > 100) {
+                                            mpvObject.volume = 100
+                                        }
+                                    }
 
-            ColumnLayout {
-                anchors.fill: parent
-
-                RadioButton {
-                    text: "No UI, ignore clicks (Default)"
-                    checked: Settings.fullscreenBehavior === "no_ui"
-                    onClicked: Settings.fullscreenBehavior = "no_ui"
-
-                    ToolTip.text: "In fullscreen: no controls shown, clicks do nothing. Use Space for pause, Esc to exit."
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                }
-
-                RadioButton {
-                    text: "Show UI on mouse move"
-                    checked: Settings.fullscreenBehavior === "show_on_move"
-                    onClicked: Settings.fullscreenBehavior = "show_on_move"
-
-                    ToolTip.text: "Show controls briefly when mouse moves (not yet implemented)"
-                    ToolTip.visible: hovered
-                    ToolTip.delay: 500
-                    enabled: false  // TODO: Implement this feature
+                                    ToolTip.text: "Enables volume up to 150%. Higher levels may introduce distortion."
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
 
-        Item { Layout.fillHeight: true }
+            // UI tab
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-        // Diagnostics button
-        Button {
-            text: "Run HDR/Output Diagnostics..."
-            icon.name: "help-about"
-            Layout.alignment: Qt.AlignHCenter
-            onClicked: {
-                diagnosticsDialog.open()
+                ScrollView {
+                    anchors.fill: parent
+                    clip: true
+
+                    ColumnLayout {
+                        width: parent.width
+                        spacing: Kirigami.Units.largeSpacing
+
+                        GroupBox {
+                            title: "Fullscreen Behavior"
+                            Layout.fillWidth: true
+
+                            ColumnLayout {
+                                anchors.fill: parent
+
+                                RadioButton {
+                                    text: "No UI, ignore clicks (Default)"
+                                    checked: Settings.fullscreenBehavior === "no_ui"
+                                    onClicked: Settings.fullscreenBehavior = "no_ui"
+
+                                    ToolTip.text: "In fullscreen: no controls shown, clicks do nothing. Use Space for pause, Esc to exit."
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                }
+
+                                RadioButton {
+                                    text: "Show UI on mouse move"
+                                    checked: Settings.fullscreenBehavior === "show_on_move"
+                                    onClicked: Settings.fullscreenBehavior = "show_on_move"
+
+                                    ToolTip.text: "Show controls briefly when mouse moves (not yet implemented)"
+                                    ToolTip.visible: hovered
+                                    ToolTip.delay: 500
+                                    enabled: false  // TODO: Implement this feature
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Diagnostics tab
+            Item {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    spacing: Kirigami.Units.largeSpacing
+
+                    Label {
+                        text: "Run diagnostics to capture HDR and output information."
+                        wrapMode: Text.WordWrap
+                        opacity: 0.7
+                        Layout.fillWidth: true
+                    }
+
+                    Button {
+                        text: "Run HDR/Output Diagnostics..."
+                        icon.name: "help-about"
+                        Layout.alignment: Qt.AlignHCenter
+                        onClicked: diagnosticsDialog.open()
+                    }
+                }
             }
         }
     }

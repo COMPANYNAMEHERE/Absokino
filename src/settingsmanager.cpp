@@ -75,10 +75,32 @@ int SettingsManager::volume() const
 
 void SettingsManager::setVolume(int vol)
 {
-    vol = qBound(0, vol, 150);
+    int maxVolume = allowVolumeBoost() ? 150 : 100;
+    vol = qBound(0, vol, maxVolume);
     if (volume() != vol) {
         m_settings.setValue("playback/volume", vol);
         emit volumeChanged();
+    }
+}
+
+bool SettingsManager::allowVolumeBoost() const
+{
+    return m_settings.value("playback/allowVolumeBoost", false).toBool();
+}
+
+void SettingsManager::setAllowVolumeBoost(bool allow)
+{
+    if (allowVolumeBoost() != allow) {
+        m_settings.setValue("playback/allowVolumeBoost", allow);
+        emit allowVolumeBoostChanged();
+    }
+
+    if (!allow) {
+        int currentVolume = m_settings.value("playback/volume", 100).toInt();
+        if (currentVolume > 100) {
+            m_settings.setValue("playback/volume", 100);
+            emit volumeChanged();
+        }
     }
 }
 

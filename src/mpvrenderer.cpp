@@ -73,6 +73,7 @@ void MpvRenderer::initializeRenderContext()
 QOpenGLFramebufferObject *MpvRenderer::createFramebufferObject(const QSize &size)
 {
     m_size = size;
+    m_forceRender = true;
 
     // Initialize render context on first FBO creation (when GL context is ready)
     if (!m_initialized) {
@@ -110,8 +111,8 @@ void MpvRenderer::render()
     // Check if there's a new frame to render
     uint64_t flags = mpv_render_context_update(m_renderCtx);
 
-    if (!(flags & MPV_RENDER_UPDATE_FRAME)) {
-        // No new frame, skip rendering
+    if (!(flags & MPV_RENDER_UPDATE_FRAME) && !m_forceRender) {
+        // No new frame and no forced repaint, skip rendering
         return;
     }
 
@@ -138,4 +139,5 @@ void MpvRenderer::render()
 
     // Render the frame
     mpv_render_context_render(m_renderCtx, params);
+    m_forceRender = false;
 }

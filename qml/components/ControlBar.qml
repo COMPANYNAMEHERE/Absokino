@@ -13,6 +13,11 @@ ToolBar {
     id: root
 
     required property MpvObject mpvObject
+    readonly property color separatorColor: Kirigami.ColorUtils.linearInterpolation(
+        Kirigami.Theme.backgroundColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.frameContrast
+    )
 
     signal openFileClicked()
     signal libraryToggled()
@@ -25,7 +30,7 @@ ToolBar {
             anchors.top: parent.top
             width: parent.width
             height: 1
-            color: Kirigami.Theme.separatorColor
+            color: root.separatorColor
         }
     }
 
@@ -142,9 +147,10 @@ ToolBar {
 
             ToolSeparator {}
 
-            // Volume slider (compact)
+            // Volume slider (~15% of its default width, centered right)
             VolumeSlider {
-                Layout.preferredWidth: 100
+                widthScale: 0.15
+                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
                 mpvObject: root.mpvObject
             }
 

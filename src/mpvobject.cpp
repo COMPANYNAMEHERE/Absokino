@@ -91,7 +91,8 @@ void MpvObject::initializeMpv()
 
         // Terminal and logging
         setMpvOption("terminal", false);
-        setMpvOption("msg-level", "all=warn");
+        // Slightly more verbose so we can diagnose real-world playback issues.
+        setMpvOption("msg-level", "all=info");
 
         // Video output - use libmpv render API
         setMpvOption("vo", "libmpv");
@@ -114,15 +115,18 @@ void MpvObject::initializeMpv()
         configureHdrOptions(hdrMode);
 
         // ====== RENDERER CONFIGURATION ======
-        // Prefer Vulkan for HDR passthrough support, fall back to OpenGL
+        // NOTE: Absokino currently uses the libmpv OpenGL render API via a Qt FBO.
+        // That means we *must* use an OpenGL-backed mpv GPU context.
+        // If the user forces Vulkan here, mpv can fail to initialise playback.
         QString rendererMode = SettingsManager::instance()->rendererMode();
         if (rendererMode == "vulkan") {
-            setMpvOption("gpu-api", "vulkan");
+            qWarning() << "Renderer mode set to Vulkan, but Absokino uses an OpenGL render context. Forcing gpu-api=opengl.";
+            setMpvOption("gpu-api", "opengl");
         } else if (rendererMode == "opengl") {
             setMpvOption("gpu-api", "opengl");
         } else {
-            // Auto: let mpv choose (typically prefers OpenGL in Qt context)
-            // Note: Qt's OpenGL context means we're limited to OpenGL here
+            // Auto: be explicit and keep it stable.
+            setMpvOption("gpu-api", "opengl");
         }
 
         // ====== AUDIO ======
@@ -328,6 +332,7 @@ void MpvObject::handleMpvEvent(mpv_event *event)
         m_playing = true;
         emit playingChanged();
         emit fileLoaded();
+        updateTracks();      // Populate audio/subtitle lists on load
         updateVideoParams();  // Force update on file load
         checkHdrContent();
         break;
@@ -640,7 +645,8 @@ void MpvObject::seekPercent(double percent)
 
 void MpvObject::setVolume(int vol)
 {
-    setMpvProperty("volume", qBound(0, vol, 150));
+    int maxVolume = SettingsManager::instance()->allowVolumeBoost() ? 150 : 100;
+    setMpvProperty("volume", qBound(0, vol, maxVolume));
 }
 
 void MpvObject::setMuted(bool muted)
