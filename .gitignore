@@ -1,0 +1,31 @@
+# Build directory
+build/
+cmake-build-*/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Qt Creator
+*.pro.user
+*.qbs.user
+*.autosave
+CMakeLists.txt.user
+
+# Compiled files
+*.o
+*.obj
+*.moc
+moc_*.cpp
+*.qm
+qrc_*.cpp
+
+# Generated files
+compile_commands.json
+
+# System files
+.DS_Store
+Thumbs.db
